@@ -9,8 +9,10 @@ const movieSchema = new mongoose.Schema({
   ageRating: { type: String, required: true },
   releaseDate: { type: Date, required: true },
   posterUrl: { type: String },
+  backdropUrl: { type: String },
   trailerUrl: { type: String },
-  rating: { type: Number, default: 0 }
+  rating: { type: Number, default: 0 },
+  isArchived: { type: Boolean, default: false }
 }, {
   timestamps: true
 });

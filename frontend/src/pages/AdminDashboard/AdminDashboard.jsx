@@ -84,7 +84,7 @@ function AnalyticsTab() {
 
     useEffect(() => {
         api.get('/admin/analytics')
-            .then(r => setData(r.data.data))
+            .then(r => setData(r.data))
             .catch(e => console.error(e))
             .finally(() => setLoading(false));
     }, []);
@@ -116,7 +116,7 @@ function AnalyticsTab() {
                 </div>
                 <div className="metric-card">
                     <h4>ACTIVE USERS</h4>
-                    <div className="metric-val text-red">{(d.activeUsers || 0).toLocaleString()}</div>
+                    <div className="metric-val text-red">{(d.totalUsers || 0).toLocaleString()}</div>
                     <p className="metric-trend text-red">Live peak traffic</p>
                 </div>
             </div>
@@ -175,7 +175,15 @@ function MoviesTab() {
                                     <div className="text-muted text-sm">{new Date(m.releaseDate).getFullYear()}</div>
                                 </td>
                                 <td>{m.genre?.join(', ')}</td>
-                                <td><span className="badge badge--teal">NOW SHOWING</span></td>
+                                <td>
+                                    {m.isArchived ? (
+                                        <span className="badge badge--outline">Archived</span>
+                                    ) : (new Date(m.releaseDate) <= new Date() ? (
+                                        <span className="badge badge--teal">Now Showing</span>
+                                    ) : (
+                                        <span className="badge badge--orange">Coming Soon</span>
+                                    ))}
+                                </td>
                                 <td>
                                     <div className="action-btns">
                                         <button onClick={() => setEditing(m)} className="btn-icon"><FiEdit2 /></button>
@@ -201,9 +209,11 @@ function MovieForm({ movie, onClose, onSuccess }) {
         genre: movie.genre || [],
         ageRating: movie.ageRating || 'UA',
         posterUrl: movie.posterUrl || '',
+        backdropUrl: movie.backdropUrl || '',
         trailerUrl: movie.trailerUrl || '',
         releaseDate: movie.releaseDate ? movie.releaseDate.split('T')[0] : '',
-        rating: movie.rating || 0
+        rating: movie.rating || 0,
+        isArchived: movie.isArchived || false
     });
 
     const onSubmit = async (e) => {
@@ -250,9 +260,15 @@ function MovieForm({ movie, onClose, onSuccess }) {
                             </select>
                         </div>
                     </div>
-                    <div className="form-group">
-                        <label>Poster URL</label>
-                        <input required placeholder="https://..." value={form.posterUrl} onChange={e => setForm({ ...form, posterUrl: e.target.value })} />
+                    <div className="grid-2">
+                        <div className="form-group">
+                            <label>Poster URL (Portrait)</label>
+                            <input required placeholder="https://..." value={form.posterUrl} onChange={e => setForm({ ...form, posterUrl: e.target.value })} />
+                        </div>
+                        <div className="form-group">
+                            <label>Backdrop URL (Landscape)</label>
+                            <input placeholder="https://..." value={form.backdropUrl} onChange={e => setForm({ ...form, backdropUrl: e.target.value })} />
+                        </div>
                     </div>
                     <div className="form-group">
                         <label>Trailer URL (Optional)</label>
@@ -268,6 +284,17 @@ function MovieForm({ movie, onClose, onSuccess }) {
                             <input required type="number" step="0.1" min="0" max="10" placeholder="8.5" value={form.rating} onChange={e => setForm({ ...form, rating: parseFloat(e.target.value) })} />
                         </div>
                     </div>
+                    <div className="form-group row-group">
+                        <label className="checkbox-label">
+                            <input
+                                type="checkbox"
+                                checked={form.isArchived}
+                                onChange={e => setForm({ ...form, isArchived: e.target.checked })}
+                            />
+                            Archive Movie (Hide from Homepage)
+                        </label>
+                    </div>
+
                     <div className="admin-modal-actions">
                         <button type="button" className="btn-ghost" onClick={onClose}>Cancel</button>
                         <button type="submit" className="btn-primary">Save Movie</button>
@@ -546,6 +573,24 @@ function ShowForm({ show, onClose, onSuccess }) {
 
     const onSubmit = async (e) => {
         e.preventDefault();
+
+        const selectedTime = new Date(form.showTime);
+        const now = new Date();
+
+        // 1. Check if show is in the past
+        if (selectedTime < now) {
+            return alert("Error: Cannot schedule a show in the past.");
+        }
+
+        // 2. Check if show is before movie release
+        const selectedMovie = movies.find(m => m._id === form.movieId);
+        if (selectedMovie) {
+            const releaseDate = new Date(selectedMovie.releaseDate);
+            if (selectedTime < releaseDate) {
+                return alert(`Error: Show date is before movie release date (${releaseDate.toLocaleDateString()}).`);
+            }
+        }
+
         try {
             if (isEdit) await api.put(`/admin/shows/${show._id}`, form);
             else await api.post('/admin/shows', form);
@@ -581,7 +626,13 @@ function ShowForm({ show, onClose, onSuccess }) {
                         </div>
                         <div className="form-group">
                             <label>Show Time</label>
-                            <input required type="datetime-local" value={form.showTime} onChange={e => setForm({ ...form, showTime: e.target.value })} />
+                            <input
+                                required
+                                type="datetime-local"
+                                min={new Date().toISOString().slice(0, 16)}
+                                value={form.showTime}
+                                onChange={e => setForm({ ...form, showTime: e.target.value })}
+                            />
                         </div>
                     </div>
                     <div className="grid-2">

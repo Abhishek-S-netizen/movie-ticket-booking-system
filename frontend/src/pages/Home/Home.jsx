@@ -5,8 +5,8 @@ import api from '../../services/api';
 import MovieCard from '../../components/MovieCard/MovieCard';
 import './Home.css';
 
-// Genre filter tabs (matching the screenshot filter bar)
-const FILTERS = ['All Movies', 'Action', 'Sci-Fi', 'Drama', 'Horror', 'Comedy'];
+// Filter categories
+const FILTERS = ['Now Showing', 'Coming Soon', 'Action', 'Sci-Fi', 'Drama', 'Horror', 'Comedy'];
 
 // Languages
 const LANGUAGES = ['English', 'Hindi', 'Tamil', 'Telugu'];
@@ -15,7 +15,7 @@ export default function Home() {
     const [movies, setMovies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [activeFilter, setActiveFilter] = useState('All Movies');
+    const [activeFilter, setActiveFilter] = useState('Now Showing');
     const [activeLang, setActiveLang] = useState('');
     const [heroIndex, setHeroIndex] = useState(0);
 
@@ -40,33 +40,48 @@ export default function Home() {
     }, []);
 
     // Auto-cycle hero
+    const activeMovies = useMemo(() => movies.filter(m => !m.isArchived), [movies]);
+
     useEffect(() => {
-        if (movies.length <= 1) return;
+        if (activeMovies.length <= 1) return;
         const id = setInterval(() => {
-            setHeroIndex((i) => (i + 1) % Math.min(movies.length, 5));
+            setHeroIndex((i) => (i + 1) % Math.min(activeMovies.length, 5));
         }, 6000);
         return () => clearInterval(id);
-    }, [movies.length]);
+    }, [activeMovies.length]);
 
     // Filtered + searched movie list
     const visibleMovies = useMemo(() => {
-        let list = movies;
+        const today = new Date();
+        let list = activeMovies;
+
+        // Search query takes precedence
         if (searchQuery) {
             const q = searchQuery.toLowerCase();
             list = list.filter((m) => m.title?.toLowerCase().includes(q));
         }
-        if (activeFilter !== 'All Movies') {
-            list = list.filter((m) => m.genre?.includes(activeFilter));
+
+        // Filter by tab
+        if (activeFilter === 'Now Showing') {
+            list = list.filter(m => new Date(m.releaseDate) <= today);
+        } else if (activeFilter === 'Coming Soon') {
+            list = list.filter(m => new Date(m.releaseDate) > today);
+        } else {
+            // Genre filters - Only show released movies of that genre
+            list = list.filter(m => m.genre?.includes(activeFilter) && new Date(m.releaseDate) <= today);
         }
+
+        // Filter by language
         if (activeLang) {
             list = list.filter((m) => m.language === activeLang);
         }
+
         return list;
-    }, [movies, searchQuery, activeFilter, activeLang]);
+    }, [activeMovies, searchQuery, activeFilter, activeLang]);
 
-    const heroMovie = movies[heroIndex] || DEMO_MOVIES[0];
+    const heroMovie = activeMovies[heroIndex] || DEMO_MOVIES[0];
 
-    const heroPoster = heroMovie?.posterUrl || '';
+    const heroPoster = heroMovie?.backdropUrl || heroMovie?.posterUrl || '';
     const heroTitle = heroMovie?.title || 'Neon Revenant';
     const heroDesc = heroMovie?.description || 'In a world where memories are traded like currency, one detective must find the girl who stole his past before the clock strikes midnight on his existence.';
     const heroGenre = heroMovie?.genre?.join(' · ') || 'Action · Thriller';
@@ -81,22 +96,33 @@ export default function Home() {
             <section
                 className="hero"
                 aria-label="Featured movie"
-                style={{ '--hero-bg': heroPoster ? `url('${heroPoster}')` : 'none' }}
             >
                 {/* Background layers */}
                 <div className="hero__bg" aria-hidden="true">
-                    {heroPoster
-                        ? <img src={heroPoster} alt="" className="hero__bg-img" />
-                        : <div className="hero__bg-fallback" />
-                    }
+                    {(activeMovies.length > 0 ? activeMovies : []).slice(0, 5).map((m, i) => (
+                        <div
+                            key={m._id || i}
+                            className={`hero__bg-layer ${i === heroIndex ? 'hero__bg-layer--active' : ''}`}
+                        >
+                            {(m.backdropUrl || m.posterUrl) ? (
+                                <img src={m.backdropUrl || m.posterUrl} alt="" className="hero__bg-img" />
+                            ) : (
+                                <div className="hero__bg-fallback" />
+                            )}
+                        </div>
+                    ))}
                     <div className="hero__bg-vignette" />
                     <div className="hero__bg-gradient" />
                 </div>
 
                 {/* Content */}
-                <div className="hero__content container">
+                <div className="hero__content container" key={heroMovie?._id || heroIndex}>
                     {/* Label */}
-                    <span className="hero__label badge badge--teal">Now Showing</span>
+                    {new Date(heroMovie?.releaseDate) <= new Date() ? (
+                        <span className="hero__label badge badge--teal">Now Showing</span>
+                    ) : (
+                        <span className="hero__label badge badge--orange">Coming Soon</span>
+                    )}
 
                     {/* Title */}
                     <h1 className="hero__title">{heroTitle}</h1>
@@ -144,7 +170,7 @@ export default function Home() {
                     </div>
 
                     {/* Rating chip — bottom right */}
-                    <div className="hero__rating-chip">
+                    <div className="hero__rating-chip" key={heroMovie?._id || 'rating'}>
                         <FiStar className="hero__star" aria-hidden="true" />
                         <span className="hero__rating-val">{heroMovie?.rating?.toFixed(1) || '0.0'}</span>
                         <span className="hero__rating-sub">/ 10</span>
@@ -222,7 +248,7 @@ export default function Home() {
                         <h2 id="movies-heading" className="section-title">
                             {searchQuery
                                 ? `Results for "${searchQuery}"`
-                                : activeFilter === 'All Movies'
+                                : activeFilter === 'Now Showing'
                                     ? 'Now Showing'
                                     : activeFilter}
                         </h2>

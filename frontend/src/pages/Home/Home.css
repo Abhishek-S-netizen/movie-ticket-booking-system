@@ -5,7 +5,8 @@
 /* ── Hero Section ── */
 .hero {
     position: relative;
-    min-height: 520px;
+    min-height: 620px;
+    /* Increased height to show more of the vertical poster */
     display: flex;
     align-items: flex-end;
     padding-bottom: var(--space-2xl);
@@ -19,12 +20,25 @@
     z-index: 0;
 }
 
+.hero__bg-layer {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: #0a0c10;
+}
+
+.hero__bg-layer--active {
+    opacity: 1;
+}
+
 .hero__bg-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: center top;
-    filter: brightness(0.45) saturate(0.9);
+    object-position: center 25%;
+    /* Focal point adjusted to 25% from the top */
+    filter: brightness(0.4) saturate(0.8);
 }
 
 .hero__bg-fallback {
@@ -37,29 +51,47 @@
 .hero__bg-vignette {
     position: absolute;
     inset: 0;
+    z-index: 1;
     background:
         radial-gradient(ellipse 60% 100% at 0% 50%, rgba(0, 0, 0, 0.75) 0%, transparent 70%);
+    pointer-events: none;
 }
 
 /* Bottom gradient fade to site background */
 .hero__bg-gradient {
     position: absolute;
     inset: 0;
+    z-index: 2;
     background: linear-gradient(to bottom,
             rgba(10, 12, 16, 0.1) 0%,
             rgba(10, 12, 16, 0.25) 50%,
             rgba(10, 12, 16, 0.92) 85%,
             var(--color-bg-base) 100%);
+    pointer-events: none;
 }
 
 /* Hero content */
 .hero__content {
     position: relative;
-    z-index: 1;
+    z-index: 10;
     max-width: 620px;
     display: flex;
     flex-direction: column;
     gap: 14px;
+    animation: heroContentEntrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    will-change: transform, opacity;
+}
+
+@keyframes heroContentEntrance {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .hero__label {
@@ -74,10 +106,9 @@
     letter-spacing: 0.04em;
     color: var(--color-text-primary);
     text-transform: uppercase;
-    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.7);
+    text-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
 }
 
-/* Teal color on second line via span (set dynamically via CSS trick) */
 .hero__title em {
     color: var(--color-accent-primary);
     font-style: normal;
@@ -88,6 +119,7 @@
     line-height: 1.65;
     color: var(--color-text-secondary);
     max-width: 480px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 /* Badges row */
@@ -114,6 +146,14 @@
     height: 4px;
     background: var(--color-text-muted);
     border-radius: 50%;
+}
+
+/* Coming Soon Badge Color */
+.badge--orange {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #000;
+    border: none;
+    font-weight: 700;
 }
 
 /* CTAs */
