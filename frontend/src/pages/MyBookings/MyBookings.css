@@ -1,0 +1,300 @@
+/* ────────────────────────────────────────────────
+   MyBookings  –  cinematic dark theme
+──────────────────────────────────────────────── */
+
+.mb-page {
+    min-height: calc(100vh - var(--navbar-h, 64px));
+    padding: 2.5rem 0 4rem;
+    background: var(--bg-primary, #0d0d14);
+}
+
+.mb-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
+/* ── Header ── */
+.mb-page-header {
+    margin-bottom: 2.5rem;
+}
+
+.mb-page-title {
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff 40%, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0 0 0.25rem;
+}
+
+.mb-page-sub {
+    color: var(--text-secondary, #9ca3af);
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+/* ── States ── */
+.mb-error {
+    text-align: center;
+    color: #f87171;
+    padding: 3rem;
+    background: rgba(248, 113, 113, 0.08);
+    border: 1px solid rgba(248, 113, 113, 0.2);
+    border-radius: 12px;
+}
+
+.mb-empty {
+    text-align: center;
+    padding: 5rem 2rem;
+}
+
+.mb-empty__icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.mb-empty__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #e5e7eb;
+    margin: 0 0 0.5rem;
+}
+
+.mb-empty__sub {
+    color: var(--text-secondary, #9ca3af);
+    margin: 0 0 2rem;
+}
+
+/* ── List ── */
+.mb-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* ── Card ── */
+.mb-card {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
+    gap: 1.5rem;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 1.25rem;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.mb-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    border-color: rgba(167, 139, 250, 0.3);
+}
+
+.mb-card--past {
+    opacity: 0.65;
+}
+
+/* Poster */
+.mb-card__poster-wrap {
+    width: 90px;
+    height: 128px;
+    border-radius: 10px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.mb-card__poster {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mb-card__poster--placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(167, 139, 250, 0.1);
+    font-size: 2rem;
+    border-radius: 10px;
+}
+
+/* Info */
+.mb-card__info {
+    min-width: 0;
+}
+
+.mb-card__header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.mb-card__title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Meta row */
+.mb-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    color: var(--text-secondary, #9ca3af);
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+}
+
+.mb-card__meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+/* Seats */
+.mb-card__seats {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.mb-seats-label {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--text-secondary, #9ca3af);
+    font-size: 0.8rem;
+    margin-right: 0.25rem;
+}
+
+.mb-seat-chip {
+    background: rgba(167, 139, 250, 0.15);
+    border: 1px solid rgba(167, 139, 250, 0.3);
+    color: #c4b5fd;
+    border-radius: 6px;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-family: monospace;
+}
+
+/* Amount col */
+.mb-card__amount-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.35rem;
+    flex-shrink: 0;
+}
+
+.mb-amount {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #a78bfa;
+}
+
+.mb-amount-label {
+    font-size: 0.75rem;
+    color: #6ee7b7;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.mb-booking-id {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--text-secondary, #9ca3af);
+    font-size: 0.75rem;
+    font-family: monospace;
+}
+
+.mb-past-tag {
+    font-size: 0.72rem;
+    background: rgba(156, 163, 175, 0.15);
+    color: #9ca3af;
+    border-radius: 20px;
+    padding: 0.15rem 0.6rem;
+}
+
+/* Status badge */
+.mb-status-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.65rem;
+    border-radius: 20px;
+}
+
+.mb-status-badge--confirmed {
+    background: rgba(110, 231, 183, 0.15);
+    color: #6ee7b7;
+    border: 1px solid rgba(110, 231, 183, 0.3);
+}
+
+.mb-status-badge--cancelled {
+    background: rgba(248, 113, 113, 0.12);
+    color: #f87171;
+    border: 1px solid rgba(248, 113, 113, 0.25);
+}
+
+.mb-status-badge--pending {
+    background: rgba(251, 191, 36, 0.12);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.25);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .mb-card {
+        grid-template-columns: 70px 1fr;
+        grid-template-rows: auto auto;
+    }
+
+    .mb-card__amount-wrap {
+        grid-column: 2;
+        align-items: flex-start;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+}
+
+/* ── Get Ticket Button ── */
+.mb-get-ticket-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.4rem;
+    padding: 0.4rem 0.85rem;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(167, 139, 250, 0.1));
+    border: 1px solid rgba(167, 139, 250, 0.4);
+    color: #c4b5fd;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.mb-get-ticket-btn:hover {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(167, 139, 250, 0.2));
+    border-color: rgba(167, 139, 250, 0.7);
+    color: #e9d5ff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}

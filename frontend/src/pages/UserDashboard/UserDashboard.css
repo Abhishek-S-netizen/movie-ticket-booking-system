@@ -1,0 +1,176 @@
+.ud-page {
+    padding: 3rem 0 5rem;
+    min-height: calc(100vh - var(--navbar-h));
+    background: var(--bg-100);
+}
+
+.ud-header {
+    margin-bottom: 3rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 2rem;
+}
+
+.ud-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #fff 0%, #a0a0b0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.ud-subtitle {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+}
+
+.ud-content {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 2rem;
+}
+
+/* Cards */
+.ud-card {
+    background: var(--bg-200);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+.ud-card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    color: #fff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 1rem;
+}
+
+.ud-icon {
+    color: var(--teal-400);
+}
+
+/* Profile Info */
+.ud-profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.ud-info-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.ud-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.ud-value {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #fff;
+    padding-left: 1.5rem;
+}
+
+.ud-role-badge {
+    display: inline-block;
+    background: rgba(0, 240, 255, 0.1);
+    color: var(--teal-300);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    padding: 0.2rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    text-transform: capitalize;
+    margin-left: 1.5rem;
+    width: fit-content;
+}
+
+/* Action Grid */
+.ud-action-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.ud-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 1.25rem;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+}
+
+.ud-action-btn:hover {
+    background: rgba(0, 240, 255, 0.08);
+    border-color: rgba(0, 240, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.ud-btn-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(0, 240, 255, 0.1);
+    color: var(--teal-400);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.ud-btn-text h3 {
+    color: #fff;
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+}
+
+.ud-btn-text p {
+    color: white;
+    font-size: 0.9rem;
+}
+
+/* Specific buttons */
+.ud-action-btn--secondary .ud-btn-icon {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.ud-action-btn--secondary:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.ud-action-btn--danger .ud-btn-icon {
+    background: rgba(255, 90, 90, 0.1);
+    color: #ff5a5a;
+}
+
+.ud-action-btn--danger:hover {
+    background: rgba(255, 90, 90, 0.08);
+    border-color: rgba(255, 90, 90, 0.3);
+}
+
+@media (max-width: 768px) {
+    .ud-content {
+        grid-template-columns: 1fr;
+    }
+}

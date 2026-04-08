@@ -1,0 +1,213 @@
+/* Placeholder */
+/* ── Seat Selection Page ── */
+
+.ss-page {
+    min-height: 100vh;
+    background: var(--color-bg-base);
+}
+
+/* Header */
+.ss-header {
+    background: var(--color-bg-surface);
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--space-lg) 0;
+}
+
+.ss-header__inner {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-lg);
+}
+
+.ss-movie-title {
+    font-family: var(--font-display);
+    font-size: clamp(20px, 3vw, 32px);
+    letter-spacing: 0.03em;
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-sm);
+}
+
+.ss-show-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+.ss-show-meta span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Body */
+.ss-body {
+    padding-top: 5rem !important;
+    padding-bottom: 5rem !important;
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: var(--space-xl);
+    padding-top: var(--space-xl);
+    padding-bottom: var(--space-2xl);
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .ss-body {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Main seat area */
+.ss-main {
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-xl);
+    overflow-x: auto;
+}
+
+.ss-inline-error {
+    color: #e07070;
+    font-size: 13px;
+    text-align: center;
+    margin-top: var(--space-md);
+    background: rgba(224, 92, 92, 0.08);
+    padding: 10px;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(224, 92, 92, 0.2);
+}
+
+/* Summary panel */
+.ss-summary {
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-lg);
+    position: sticky;
+    top: calc(var(--navbar-h) + var(--space-lg));
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.ss-summary__title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+.ss-summary__body {
+    flex: 1;
+}
+
+.ss-summary__empty {
+    color: var(--color-text-muted);
+    font-size: 13px;
+    text-align: center;
+    padding: var(--space-lg) 0;
+}
+
+.ss-summary__seats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: var(--space-md);
+}
+
+.ss-price-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+.ss-price-row--fee {
+    color: var(--color-text-muted);
+    font-size: 12px;
+}
+
+.ss-summary__total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-md) 0;
+    border-top: 1px solid var(--color-border);
+    font-weight: 700;
+}
+
+.ss-total-amount {
+    font-size: 24px;
+    color: var(--color-accent-primary);
+}
+
+.ss-selected-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+    margin-top: var(--space-sm);
+}
+
+.ss-selected-label {
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+.ss-seat-tag {
+    background: rgba(0, 229, 191, 0.1);
+    border: 1px solid rgba(0, 229, 191, 0.3);
+    color: var(--color-accent-primary);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+}
+
+.ss-seat-tag--premium {
+    background: rgba(180, 120, 255, 0.1);
+    border-color: rgba(180, 120, 255, 0.35);
+    color: #c8a0ff;
+}
+
+.ss-proceed-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 14px;
+    font-size: 14px;
+}
+
+.ss-proceed-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.ss-login-hint {
+    text-align: center;
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+.ss-login-link {
+    background: none;
+    border: none;
+    color: var(--color-accent-primary);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.ss-error {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-lg);
+    color: var(--color-text-muted);
+}

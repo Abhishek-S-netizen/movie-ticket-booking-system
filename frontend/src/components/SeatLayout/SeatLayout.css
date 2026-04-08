@@ -1,0 +1,196 @@
+/* Placeholder */
+.sl-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin: 1rem 0;
+    perspective: 1000px;
+}
+
+/* Screen Arch */
+.sl-screen-wrap {
+    width: 100%;
+    max-width: 600px;
+    margin-bottom: 3rem;
+    text-align: center;
+}
+
+.sl-screen-arch {
+    height: 60px;
+    width: 100%;
+    background: var(--bg-100);
+    border-top-left-radius: 50% 100%;
+    border-top-right-radius: 50% 100%;
+    box-shadow: 0 -10px 30px rgba(0, 240, 255, 0.15), inset 0 2px 5px rgba(0, 240, 255, 0.3);
+    position: relative;
+    transform: rotateX(-10deg);
+}
+
+.sl-screen-text {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.5em;
+    color: var(--teal-400);
+    opacity: 0.8;
+}
+
+/* Grid Wrapper */
+.sl-grid-wrap {
+    overflow-x: auto;
+    max-width: 100%;
+    padding: 1rem;
+}
+
+.sl-grid {
+    display: grid;
+    /* 3 columns: Label | Seats | Label */
+    grid-template-columns: auto 1fr auto;
+    gap: 0.75rem 1.5rem;
+    align-items: center;
+    justify-items: center;
+}
+
+.sl-row-label {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.85rem;
+    color: var(--secondary-color);
+    font-weight: 500;
+    width: 1.5rem;
+    text-align: center;
+}
+
+.sl-seat-row {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), 1fr);
+    gap: 0.5rem;
+}
+
+/* The Seat Button */
+.sl-seat {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px 6px 4px 4px;
+    border: 1.5px solid transparent;
+    background: var(--bg-200);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+/* Seat Armrests Illusion */
+.sl-seat::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 3px;
+    right: 3px;
+    height: 4px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+}
+
+/* Seat Available */
+.sl-seat--available {
+    border-color: rgba(0, 240, 255, 0.3);
+}
+
+.sl-seat--available:hover {
+    border-color: var(--teal-400);
+    background: rgba(0, 240, 255, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 240, 255, 0.2);
+}
+
+/* Seat Premium */
+.sl-seat--available.sl-seat--premium {
+    border-color: rgba(255, 90, 90, 0.5);
+}
+
+.sl-seat--available.sl-seat--premium:hover {
+    border-color: #ff5a5a;
+    background: rgba(255, 90, 90, 0.1);
+    box-shadow: 0 4px 12px rgba(255, 90, 90, 0.2);
+}
+
+/* Seat Booked/Locked */
+.sl-seat--unavailable {
+    background: #2a2a30;
+    border-color: transparent;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.sl-seat--unavailable:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* Seat Selected */
+.sl-seat--selected {
+    background: var(--teal-500);
+    border-color: var(--teal-300);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+    transform: translateY(-2px);
+}
+
+.sl-seat-tick {
+    color: var(--bg-100);
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+/* Legend */
+.sl-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+    justify-content: center;
+    width: 100%;
+}
+
+.sl-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.sl-legend-item .sl-seat {
+    width: 24px;
+    height: 24px;
+    pointer-events: none;
+    border-radius: 4px;
+}
+
+.sl-legend-item .sl-seat-tick {
+    font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+    .sl-seat {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+    }
+
+    .sl-row-label {
+        font-size: 0.75rem;
+        width: 1rem;
+    }
+
+    .sl-seat-row {
+        gap: 0.25rem;
+    }
+
+    .sl-screen-wrap {
+        margin-bottom: 2rem;
+    }
+}
