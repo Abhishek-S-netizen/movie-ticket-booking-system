@@ -17,7 +17,11 @@ connectDB();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: "https://cinemax-xi.vercel.app/",
+  credentials: true
+}));
+
 app.use(express.json()); // Parses incoming JSON requests
 
 // Routes
