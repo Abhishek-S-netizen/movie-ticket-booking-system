@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useUIFeedback } from '../../context/UIFeedbackContent';
 import api from '../../services/api';
 import SeatLayout from '../../components/SeatLayout/SeatLayout';
-import { FiMapPin, FiCalendar, FiClock, FiMonitor } from 'react-icons/fi';
+import { FiMapPin, FiCalendar, FiClock, FiMonitor, FiInfo } from 'react-icons/fi';
+import CheckoutTimer from '../../components/CheckoutTimer/CheckoutTimer';
 import './SeatSelection.css';
 
 const CONVENIENCE_FEE_RATE = 0.05; // 5%
@@ -19,6 +21,7 @@ export default function SeatSelection() {
     const { id: showId } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { showAlert } = useUIFeedback();
 
     const [show, setShow] = useState(null);
     const [seatStatus, setSeatStatus] = useState({ bookedSeats: [], lockedSeats: [] });
@@ -44,7 +47,13 @@ export default function SeatSelection() {
                     api.get(`/bookings/shows/${showId}/seats`),
                 ]);
                 setShow(showRes.data || {});
-                setSeatStatus(seatRes.data || { bookedSeats: [], lockedSeats: [] });
+                const seatData = seatRes.data || { bookedSeats: [], lockedSeats: [], myLockedSeats: [], myLockExpiry: null };
+                setSeatStatus(seatData);
+
+                // Pre-select seats already locked by the current user
+                if (seatData.myLockedSeats && seatData.myLockedSeats.length > 0) {
+                    setSelectedSeats(seatData.myLockedSeats);
+                }
             } catch {
                 setError('Unable to load show details. Please try again.');
             } finally {
@@ -95,12 +104,14 @@ export default function SeatSelection() {
         setLocking(true);
         setError('');
         try {
-            await api.post(`/bookings/shows/${showId}/lock`, { seats: selectedSeats });
+            const response = await api.post(`/bookings/shows/${showId}/lock`, { seats: selectedSeats });
+            const expiryAt = response.data?.expiresAt;
 
             // Store booking context in sessionStorage for Checkout page
             sessionStorage.setItem('checkoutData', JSON.stringify({
                 showId,
                 seats: selectedSeats,
+                expiryAt,
                 totalAmount: total,
                 subtotal,
                 fee,
@@ -157,6 +168,23 @@ export default function SeatSelection() {
                     </div>
                 </div>
             </div>
+
+            {seatStatus?.myLockExpiry && (
+                <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center' }}>
+                    <CheckoutTimer
+                        expiryTimestamp={seatStatus.myLockExpiry}
+                        onExpire={async () => {
+                            await showConfirm({
+                                title: "Session Expired",
+                                message: "Your seat reservation has expired. Please wait about 30 seconds for the system to refresh before selecting these seats again.",
+                                confirmText: "Got it",
+                                cancelText: null
+                            });
+                            window.location.reload();
+                        }}
+                    />
+                </div>
+            )}
 
             <div className="container ss-body">
                 {/* Seat grid */}

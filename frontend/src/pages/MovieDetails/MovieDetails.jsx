@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { FiClock, FiGlobe, FiCalendar, FiStar, FiPlay } from 'react-icons/fi';
+import { useUIFeedback } from '../../context/UIFeedbackContent';
+import { FiClock, FiGlobe, FiCalendar, FiStar, FiPlay, FiInfo } from 'react-icons/fi';
 import './MovieDetails.css';
 
 // Group shows by calendar date string (YYYY-MM-DD)
@@ -28,9 +29,20 @@ function formatDuration(mins) {
     return h ? `${h}h ${m}m` : `${m}m`;
 }
 
+function getShowStatus(showTime) {
+    const now = new Date();
+    const start = new Date(showTime);
+    const lateCutoff = new Date(start.getTime() + 15 * 60 * 1000);
+
+    if (now > lateCutoff) return 'ended';
+    if (now > start) return 'started';
+    return 'upcoming';
+}
+
 export default function MovieDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showAlert } = useUIFeedback();
 
     const [movie, setMovie] = useState(null);
     const [shows, setShows] = useState([]);
@@ -68,6 +80,13 @@ export default function MovieDetails() {
 
     const handleBookNow = () => {
         if (!selectedShow) return;
+        const status = getShowStatus(selectedShow.showTime);
+
+        if (status === 'ended') {
+            showAlert('This show has already started and the 15-minute entry window has passed.', 'error');
+            return;
+        }
+
         navigate(`/shows/${selectedShow._id}/seats`);
     };
 
@@ -180,19 +199,29 @@ export default function MovieDetails() {
                                 <div className="md-time-slots">
                                     <p className="md-time-label">Available Times</p>
                                     <div className="md-times-grid">
-                                        {(dateGroups[selectedDate] || []).map(show => (
-                                            <button
-                                                key={show._id}
-                                                id={`show-time-${show._id}`}
-                                                className={`md-time-btn ${selectedShow?._id === show._id ? 'md-time-btn--active' : ''}`}
-                                                onClick={() => setSelectedShow(show)}
-                                            >
-                                                {formatTime(show.showTime)}
-                                                {show.theatreId?.name && (
-                                                    <span className="md-time-btn__theatre">{show.theatreId.name}</span>
-                                                )}
-                                            </button>
-                                        ))}
+                                        {(dateGroups[selectedDate] || [])
+                                            .filter(show => getShowStatus(show.showTime) !== 'ended')
+                                            .map(show => {
+                                                const status = getShowStatus(show.showTime);
+                                                const isStarted = status === 'started';
+
+                                                return (
+                                                    <button
+                                                        key={show._id}
+                                                        id={`show-time-${show._id}`}
+                                                        className={`md-time-btn ${selectedShow?._id === show._id ? 'md-time-btn--active' : ''}`}
+                                                        onClick={() => setSelectedShow(show)}
+                                                    >
+                                                        <div className="md-time-btn__top">
+                                                            {formatTime(show.showTime)}
+                                                            {isStarted && <span className="md-time-tag md-time-tag--live">STARTED</span>}
+                                                        </div>
+                                                        {show.theatreId?.name && (
+                                                            <span className="md-time-btn__theatre">{show.theatreId.name}</span>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
                                     </div>
                                 </div>
                             )}

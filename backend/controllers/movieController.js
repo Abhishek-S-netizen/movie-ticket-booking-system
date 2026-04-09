@@ -1,11 +1,36 @@
 const Movie = require('../models/Movie');
+const Show = require('../models/Show');
 
 // @desc    Get all movies
 // @route   GET /api/movies
 // @access  Public
 const getMovies = async (req, res) => {
   try {
-    const movies = await Movie.find({});
+    const { status, isArchived } = req.query;
+    let query = {};
+
+    // 1. Admin Override (Checks secure token instead of URL parameter)
+    if (req.user && req.user.role === 'admin') {
+      const movies = await Movie.find({}).sort({ createdAt: -1 });
+      return res.json({ success: true, data: movies });
+    }
+
+    // 2. Filter by archive status (Public logic)
+    if (isArchived !== undefined) {
+      query.isArchived = isArchived === 'true';
+    } else {
+      query.isArchived = { $ne: true };
+    }
+
+    // 2. Filter by release status
+    const today = new Date();
+    if (status === 'released') {
+      query.releaseDate = { $lte: today };
+    } else if (status === 'upcoming') {
+      query.releaseDate = { $gt: today };
+    }
+
+    const movies = await Movie.find(query).sort({ releaseDate: -1 });
     res.json({ success: true, data: movies });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
@@ -49,6 +74,21 @@ const updateMovie = async (req, res) => {
     const movie = await Movie.findById(req.params.id);
 
     if (movie) {
+      // Logic for Archiving Validation
+      if (req.body.isArchived === true && movie.isArchived !== true) {
+        const activeShowsCount = await Show.countDocuments({
+          movieId: req.params.id,
+          showTime: { $gte: new Date() }
+        });
+
+        if (activeShowsCount > 0) {
+          return res.status(400).json({
+            success: false,
+            message: `Cannot archive movie. There are ${activeShowsCount} upcoming shows scheduled. Please delete or wait for these shows to complete first.`
+          });
+        }
+      }
+
       Object.assign(movie, req.body);
       const updatedMovie = await movie.save();
       res.json({ success: true, data: updatedMovie });

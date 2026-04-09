@@ -1,9 +1,10 @@
-// Placeholder for Checkout Page
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useUIFeedback } from '../../context/UIFeedbackContent';
 import api from '../../services/api';
-import { FiMapPin, FiCalendar, FiMonitor, FiArrowLeft, FiCheck } from 'react-icons/fi';
+import { FiMapPin, FiCalendar, FiMonitor, FiArrowLeft, FiCheck, FiClock } from 'react-icons/fi';
+import CheckoutTimer from '../../components/CheckoutTimer/CheckoutTimer';
 import './Checkout.css';
 
 function formatDate(d) {
@@ -16,6 +17,7 @@ function formatTime(d) {
 export default function Checkout() {
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { showAlert, showConfirm } = useUIFeedback();
     const [checkoutData, setCheckoutData] = useState(null);
     const [booking, setBooking] = useState(false);
     const [success, setSuccess] = useState(false);
@@ -56,6 +58,30 @@ export default function Checkout() {
         }
     };
 
+    const handleDiscard = async () => {
+        const confirmed = await showConfirm({
+            title: "Discard Selection?",
+            message: "Are you sure you want to discard these seats? They will be immediately released for other users.",
+            confirmText: "Yes, Discard",
+            cancelText: "No, Keep Them"
+        });
+
+        if (!confirmed) return;
+
+        try {
+            setBooking(true);
+            await api.delete(`/bookings/shows/${showId}/lock`);
+            sessionStorage.removeItem('checkoutData');
+            navigate('/');
+        } catch (err) {
+            setError('Failed to release seats. Redirecting anyway...');
+            setTimeout(() => {
+                sessionStorage.removeItem('checkoutData');
+                navigate('/');
+            }, 2000);
+        }
+    };
+
     // Success state
     if (success) return (
         <div className="co-success fade-in">
@@ -93,6 +119,21 @@ export default function Checkout() {
                 {/* Right panel — summary */}
                 <div className="co-right">
                     <div className="co-summary-card">
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <CheckoutTimer
+                                expiryTimestamp={checkoutData.expiryAt}
+                                onExpire={async () => {
+                                    await showConfirm({
+                                        title: "Session Expired",
+                                        message: "Your seat reservation has expired. Please wait about 30 seconds for the seats to refresh before selecting them again.",
+                                        confirmText: "Got it",
+                                        cancelText: null
+                                    });
+                                    sessionStorage.removeItem('checkoutData');
+                                    navigate('/');
+                                }}
+                            />
+                        </div>
                         <h2 className="co-summary-title">Booking Summary</h2>
 
                         <div className="co-summary-venue">
@@ -157,14 +198,25 @@ export default function Checkout() {
                             <div className="co-error" role="alert">{error}</div>
                         )}
 
-                        <button
-                            id="btn-confirm-booking"
-                            className="btn-primary co-confirm-btn"
-                            onClick={handleConfirm}
-                            disabled={booking}
-                        >
-                            {booking ? 'Processing…' : '✓ Confirm Booking →'}
-                        </button>
+                        <div className="co-actions">
+                            <button
+                                id="btn-confirm-booking"
+                                className="btn-primary co-confirm-btn"
+                                onClick={handleConfirm}
+                                disabled={booking}
+                            >
+                                {booking ? 'Processing…' : '✓ Confirm Booking →'}
+                            </button>
+
+                            <button
+                                id="btn-discard-booking"
+                                className="btn-ghost co-discard-btn"
+                                onClick={handleDiscard}
+                                disabled={booking}
+                            >
+                                ✕ Discard Selection
+                            </button>
+                        </div>
 
                         <div className="co-footer-links">
                             <button className="co-text-link" onClick={() => navigate('/')}>Back to Home</button>
@@ -174,6 +226,6 @@ export default function Checkout() {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

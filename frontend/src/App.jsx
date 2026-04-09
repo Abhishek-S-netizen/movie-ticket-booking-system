@@ -3,7 +3,9 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar/Navbar';
 import Home from './pages/Home/Home';
+import FeedbackOverlay from './components/UIFeedback/FeedBackOverlay';
 import Login from './pages/Login/Login';
+import Theatres from './pages/Theatres/Theatres';
 import MovieDetails from './pages/MovieDetails/MovieDetails';
 import MyBookings from './pages/MyBookings/MyBookings';
 import SeatSelection from './pages/SeatSelection/SeatSelection';
@@ -11,6 +13,9 @@ import AdminDashboard from './pages/AdminDashboard/AdminDashboard';
 import UserDashboard from './pages/UserDashboard/UserDashboard';
 import Checkout from './pages/Checkout/Checkout';
 import { useAuth } from './context/AuthContext';
+import ForgotPassword from './pages/ForgotPassword/ForgotPassword';
+import ResetPassword from './pages/ResetPassword/ResetPassword';
+import Footer from './components/Footer/Footer';
 
 // Placeholder pages (to be implemented)
 const Placeholder = ({ name }) => (
@@ -38,14 +43,17 @@ function AdminRoute({ children }) {
 export default function App() {
     return (
         <>
+            <FeedbackOverlay />
             <Navbar />
             <div style={{ paddingTop: 'var(--navbar-h)' }}>
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/movies" element={<Home />} />
                     <Route path="/movies/:id" element={<MovieDetails />} />
-                    <Route path="/theatres" element={<Placeholder name="Theatres" />} />
+                    <Route path="/theatres" element={<Theatres />} />
                     <Route path="/login" element={<Login />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password/:token" element={<ResetPassword />} />
                     <Route path="/shows/:id/seats" element={<SeatSelection />} />
 
                     <Route path="/checkout" element={
@@ -62,6 +70,7 @@ export default function App() {
                     } />
                 </Routes>
             </div>
+            <Footer />
         </>
     );
 }

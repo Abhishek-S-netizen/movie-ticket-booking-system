@@ -17,14 +17,33 @@ const getSeatStatus = async (req, res) => {
     });
 
     // 2. Get all currently locked seats for this show
+    const currentUserId = req.user ? req.user._id.toString() : null;
     const lockedSeatDocs = await SeatLock.find({ showId });
-    const lockedSeats = lockedSeatDocs.map(lock => lock.seatNumber);
+
+    // Separate locks into the user's own locks vs others
+    const lockedSeats = [];
+    const myLockedSeats = [];
+    let myLockExpiry = null;
+
+    lockedSeatDocs.forEach(lock => {
+      if (currentUserId && lock.userId.toString() === currentUserId) {
+        myLockedSeats.push(lock.seatNumber);
+        // Track the expiry time for the user's session
+        if (!myLockExpiry || lock.expiresAt < myLockExpiry) {
+          myLockExpiry = lock.expiresAt;
+        }
+      } else {
+        lockedSeats.push(lock.seatNumber);
+      }
+    });
 
     res.status(200).json({
       success: true,
       data: {
         bookedSeats,
-        lockedSeats
+        lockedSeats,
+        myLockedSeats,
+        myLockExpiry
       }
     });
   } catch (error) {
@@ -45,6 +64,10 @@ const lockSeats = async (req, res) => {
     if (!seats || seats.length === 0) {
       return res.status(400).json({ success: false, message: 'Please provide seats to lock' });
     }
+
+    // Pre-emptive Cleanup (Approach B): Remove any existing locks for this user and show
+    // before creating new ones. This prevents "locking leaks" if the user changes their mind.
+    await SeatLock.deleteMany({ showId, userId });
 
     // 1. Check if any of the requested seats are already permanently booked
     const conflictingBookings = await Booking.find({
@@ -75,7 +98,8 @@ const lockSeats = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Seats locked successfully for 5 minutes'
+      message: 'Seats locked successfully for 5 minutes',
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000)
     });
   } catch (error) {
     console.error(error);
@@ -111,8 +135,9 @@ const createBooking = async (req, res) => {
       bookingStatus: 'Confirmed'
     });
 
-    // 3. Remove the seat locks since they are now fully booked
-    await SeatLock.deleteMany({ showId, userId, seatNumber: { $in: seats } });
+    // 3. Remove ALL seat locks for this show and user since the booking is now confirmed
+    // (Clears the currently selected seats AND any ghost locks that might have been left over)
+    await SeatLock.deleteMany({ showId, userId });
 
     res.status(201).json({
       success: true,
@@ -149,9 +174,76 @@ const getMyBookings = async (req, res) => {
   }
 };
 
+// @desc    Cancel a booking
+// @route   PUT /api/bookings/:id/cancel
+// @access  Private
+const cancelBooking = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id).populate('showId');
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    // Verify ownership (or admin status)
+    if (booking.userId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(401).json({ success: false, message: 'Not authorized to cancel this booking' });
+    }
+
+    if (booking.bookingStatus === 'Cancelled') {
+      return res.status(400).json({ success: false, message: 'Booking is already cancelled' });
+    }
+
+    // Check time limit (e.g., 2 hours before showtime)
+    const showTime = new Date(booking.showId.showTime);
+    const now = new Date();
+    const diffHours = (showTime - now) / (1000 * 60 * 60);
+
+    if (diffHours < 2) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cancellation not allowed. Tickets can only be cancelled up to 2 hours before showtime.'
+      });
+    }
+
+    booking.bookingStatus = 'Cancelled';
+    booking.paymentStatus = 'Refunded';
+    await booking.save();
+
+    res.status(200).json({ success: true, message: 'Booking cancelled successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error cancelling booking' });
+  }
+};
+
+// @desc    Unlock seats manually (Discard Selection)
+// @route   DELETE /api/bookings/shows/:showId/lock
+// @access  Private
+const unlockSeats = async (req, res) => {
+  try {
+    const { showId } = req.params;
+    const userId = req.user._id;
+
+    // Remove all seat locks for this specific show and user
+    // Isolation: This only affects the authenticated user's locks
+    await SeatLock.deleteMany({ showId, userId });
+
+    res.status(200).json({
+      success: true,
+      message: 'Seats released successfully'
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error releasing seats' });
+  }
+};
+
 module.exports = {
   getSeatStatus,
   lockSeats,
   createBooking,
-  getMyBookings
+  getMyBookings,
+  cancelBooking,
+  unlockSeats
 };

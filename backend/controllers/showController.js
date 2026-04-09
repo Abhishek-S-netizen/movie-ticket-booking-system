@@ -6,10 +6,11 @@ const Show = require('../models/Show');
 const getShowsByMovie = async (req, res) => {
   try {
     const now = new Date();
+    const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000);
 
     const shows = await Show.find({
       movieId: req.params.movieId,
-      showTime: { $gte: now } // Only return upcoming shows
+      showTime: { $gte: fifteenMinutesAgo } // Allow shows that started within the last 15 minutes
     })
       .populate('theatreId', 'name location city screens')
       .sort('showTime');

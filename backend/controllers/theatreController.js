@@ -1,4 +1,5 @@
 const Theatre = require('../models/Theatre');
+const Show = require('../models/Show');
 
 // @desc    Get all theatres
 // @route   GET /api/theatres
@@ -62,9 +63,32 @@ const deleteTheatre = async (req, res) => {
   }
 };
 
+// @desc    Get movies playing at a specific theatre
+// @route   GET /api/theatres/:id/movies
+// @access  Public
+const getMoviesByTheatre = async (req, res) => {
+  try {
+    // Find all unique movieIds from shows at this theatre
+    const shows = await Show.find({ theatreId: req.params.id }).populate('movieId');
+
+    // Extract unique movies
+    const moviesMap = new Map();
+    shows.forEach(show => {
+      if (show.movieId && !moviesMap.has(show.movieId._id.toString())) {
+        moviesMap.set(show.movieId._id.toString(), show.movieId);
+      }
+    });
+
+    res.json({ success: true, data: Array.from(moviesMap.values()) });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
 module.exports = {
   getTheatres,
   createTheatre,
   updateTheatre,
   deleteTheatre,
+  getMoviesByTheatre
 };

@@ -108,6 +108,8 @@
     font-weight: 600;
     color: var(--color-text-primary);
     line-height: 1.35;
+    min-height: 2.7em;
+    /* Reserved space for 2 lines */
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;

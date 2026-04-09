@@ -5,7 +5,7 @@ const bookingSchema = new mongoose.Schema({
   showId: { type: mongoose.Schema.Types.ObjectId, ref: 'Show', required: true },
   seats: [{ type: String, required: true }],
   totalAmount: { type: Number, required: true },
-  paymentStatus: { type: String, enum: ['Pending', 'Completed', 'Failed'], default: 'Pending' },
+  paymentStatus: { type: String, enum: ['Pending', 'Completed', 'Failed', 'Refunded'], default: 'Pending' },
   bookingStatus: { type: String, enum: ['Confirmed', 'Cancelled'], default: 'Confirmed' }
 }, {
   timestamps: true

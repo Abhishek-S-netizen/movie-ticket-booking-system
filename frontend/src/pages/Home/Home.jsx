@@ -40,20 +40,18 @@ export default function Home() {
     }, []);
 
     // Auto-cycle hero
-    const activeMovies = useMemo(() => movies.filter(m => !m.isArchived), [movies]);
-
     useEffect(() => {
-        if (activeMovies.length <= 1) return;
+        if (movies.length <= 1) return;
         const id = setInterval(() => {
-            setHeroIndex((i) => (i + 1) % Math.min(activeMovies.length, 5));
+            setHeroIndex((i) => (i + 1) % Math.min(movies.length, 5));
         }, 6000);
         return () => clearInterval(id);
-    }, [activeMovies.length]);
+    }, [movies.length]);
 
     // Filtered + searched movie list
     const visibleMovies = useMemo(() => {
         const today = new Date();
-        let list = activeMovies;
+        let list = movies;
 
         // Search query takes precedence
         if (searchQuery) {
@@ -77,9 +75,9 @@ export default function Home() {
         }
 
         return list;
-    }, [activeMovies, searchQuery, activeFilter, activeLang]);
+    }, [movies, searchQuery, activeFilter, activeLang]);
 
-    const heroMovie = activeMovies[heroIndex] || DEMO_MOVIES[0];
+    const heroMovie = movies[heroIndex] || DEMO_MOVIES[0];
 
     const heroPoster = heroMovie?.backdropUrl || heroMovie?.posterUrl || '';
     const heroTitle = heroMovie?.title || 'Neon Revenant';
@@ -99,7 +97,7 @@ export default function Home() {
             >
                 {/* Background layers */}
                 <div className="hero__bg" aria-hidden="true">
-                    {(activeMovies.length > 0 ? activeMovies : []).slice(0, 5).map((m, i) => (
+                    {(movies.length > 0 ? movies : []).slice(0, 5).map((m, i) => (
                         <div
                             key={m._id || i}
                             className={`hero__bg-layer ${i === heroIndex ? 'hero__bg-layer--active' : ''}`}
@@ -170,11 +168,6 @@ export default function Home() {
                     </div>
 
                     {/* Rating chip — bottom right */}
-                    <div className="hero__rating-chip" key={heroMovie?._id || 'rating'}>
-                        <FiStar className="hero__star" aria-hidden="true" />
-                        <span className="hero__rating-val">{heroMovie?.rating?.toFixed(1) || '0.0'}</span>
-                        <span className="hero__rating-sub">/ 10</span>
-                    </div>
 
                     {/* Hero dots nav */}
                     {movies.length > 1 && (

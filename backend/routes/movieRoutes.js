@@ -7,10 +7,10 @@ const {
   updateMovie,
   deleteMovie,
 } = require('../controllers/movieController');
-const { protect, admin } = require('../middleware/authMiddleware');
+const { protect, admin, optProtect } = require('../middleware/authMiddleware');
 
 router.route('/')
-  .get(getMovies)
+  .get(optProtect, getMovies)
   .post(protect, admin, createMovie);
 
 router.route('/:id')

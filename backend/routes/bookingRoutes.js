@@ -4,16 +4,20 @@ const {
   getSeatStatus,
   lockSeats,
   createBooking,
-  getMyBookings
+  getMyBookings,
+  cancelBooking,
+  unlockSeats
 } = require('../controllers/bookingController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, admin, optProtect } = require('../middleware/authMiddleware');
 
-// Public route to see which seats are taken/locked
-router.get('/shows/:showId/seats', getSeatStatus);
+// Publicly accessible, but identity-aware (checks for user token if present)
+router.get('/shows/:showId/seats', optProtect, getSeatStatus);
 
 // Protected routes
 router.post('/shows/:showId/lock', protect, lockSeats);
+router.delete('/shows/:showId/lock', protect, unlockSeats);
 router.post('/', protect, createBooking);
 router.get('/mybookings', protect, getMyBookings);
+router.put('/:id/cancel', protect, cancelBooking);
 
 module.exports = router;

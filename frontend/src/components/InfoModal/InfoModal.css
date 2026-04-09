@@ -1,0 +1,186 @@
+.info-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(12px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: modalFadeIn 0.3s ease;
+    padding: var(--space-md);
+}
+
+.info-modal-card {
+    background: var(--color-bg-card);
+    width: 100%;
+    max-width: 580px;
+    max-height: 80vh;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-hover);
+    position: relative;
+    overflow: hidden;
+    /* Prevent scrollbar from clipping rounded corners */
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+    animation: modalScaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.info-modal-scroll-area {
+    overflow-y: auto;
+    flex: 1;
+    padding-right: 4px;
+    /* Space for the floating scrollbar */
+}
+
+/* Custom Floating Scrollbar for Modal */
+.info-modal-scroll-area::-webkit-scrollbar {
+    width: 8px;
+}
+
+.info-modal-scroll-area::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.info-modal-scroll-area::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    border: 2px solid var(--color-bg-card);
+    /* Creates the "floating" effect */
+}
+
+.info-modal-scroll-area::-webkit-scrollbar-thumb:hover {
+    background: var(--color-accent-primary);
+}
+
+.info-modal-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--color-text-secondary);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+    transition: all 0.2s ease;
+}
+
+.info-modal-close:hover {
+    background: var(--color-accent-primary);
+    color: #000;
+    transform: rotate(90deg);
+}
+
+.info-modal-body {
+    padding: 30px 40px 40px;
+}
+
+.info-modal-body h2 {
+    font-family: var(--font-display);
+    font-size: 36px;
+    color: var(--color-accent-primary);
+    margin-bottom: 24px;
+    letter-spacing: 2px;
+}
+
+.info-modal-body p {
+    color: var(--color-text-primary);
+    line-height: 1.8;
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+/* Contact Form Styles */
+.contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--color-text-secondary);
+}
+
+.form-group input,
+.form-group textarea {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--color-border);
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    color: #fff;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--color-accent-primary);
+}
+
+.submit-btn {
+    background: var(--color-accent-primary);
+    color: #000;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 10px;
+}
+
+.submit-btn:hover {
+    background: var(--color-accent-hover);
+    box-shadow: var(--shadow-glow);
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modalScaleUp {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@media (max-width: 576px) {
+    .info-modal-body {
+        padding: 30px 20px;
+    }
+}

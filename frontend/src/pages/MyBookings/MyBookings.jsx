@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import TicketModal from '../../components/TicketModal/TicketModal';
+import { useUIFeedback } from '../../context/UIFeedbackContent';
 import { FiCalendar, FiMapPin, FiMonitor, FiTag, FiPackage, FiClock } from 'react-icons/fi';
 import './MyBookings.css';
 
@@ -18,13 +19,38 @@ export default function MyBookings() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [selectedBooking, setSelectedBooking] = useState(null);
+    const { showAlert, showConfirm } = useUIFeedback();
 
-    useEffect(() => {
+    const fetchBookings = useCallback(() => {
+        setLoading(true);
         api.get('/bookings/mybookings')
             .then(r => setBookings(r.data))
             .catch(() => setError('Failed to load your bookings.'))
             .finally(() => setLoading(false));
     }, []);
+
+    useEffect(() => {
+        fetchBookings();
+    }, [fetchBookings]);
+
+    const handleCancel = async (id) => {
+        const ok = await showConfirm({
+            title: 'Cancel Booking',
+            message: 'Are you sure you want to cancel this booking? Seats will be released and payment will be refunded.',
+            confirmText: 'Yes, Cancel',
+            cancelText: 'Keep it'
+        });
+
+        if (!ok) return;
+
+        try {
+            await api.put(`/bookings/${id}/cancel`);
+            showAlert('Booking cancelled successfully.', 'success');
+            fetchBookings();
+        } catch (e) {
+            showAlert(e.response?.data?.message || "Failed to cancel booking.", 'error');
+        }
+    };
 
     return (
         <div className="mb-page fade-in">
@@ -118,17 +144,34 @@ export default function MyBookings() {
                                             <FiPackage />
                                             <span title={booking._id}>{booking._id.slice(-8).toUpperCase()}</span>
                                         </div>
-                                        {isPast && <span className="mb-past-tag">Screened</span>}
+                                        {isPast && (
+                                            <div className="mb-expired-overlay">
+                                                <span className="mb-expired-badge">Expired</span>
+                                            </div>
+                                        )}
                                         {booking.bookingStatus === 'Confirmed' && (
-                                            <button
-                                                className="mb-get-ticket-btn"
-                                                onClick={() => setSelectedBooking(booking)}
-                                                aria-label={`Get ticket for ${movie?.title}`}
-                                            >
-                                                🎟 Get Ticket
-                                            </button>
+                                            <div className="mb-card__actions">
+                                                <button
+                                                    className={`mb-get-ticket-btn ${isPast ? 'mb-btn--disabled' : ''}`}
+                                                    onClick={() => !isPast && setSelectedBooking(booking)}
+                                                    aria-label={isPast ? "Ticket expired" : `Get ticket for ${movie?.title}`}
+                                                    disabled={isPast}
+                                                >
+                                                    {isPast ? '🎟 Show Ended' : '🎟 Get Ticket'}
+                                                </button>
+                                                {!isPast && (
+                                                    <button
+                                                        className="mb-cancel-btn"
+                                                        onClick={() => handleCancel(booking._id)}
+                                                        aria-label={`Cancel booking for ${movie?.title}`}
+                                                    >
+                                                        Cancel Ticket
+                                                    </button>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
+
                                 </div>
                             );
                         })}

@@ -3,15 +3,18 @@ import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import { useUIFeedback } from '../../context/UIFeedbackContent';
 import {
     FiPieChart, FiFilm, FiMonitor, FiVideo, FiUsers,
-    FiEdit2, FiTrash2, FiPlus, FiSettings, FiX
+    FiEdit2, FiTrash2, FiPlus, FiSettings, FiX, FiTrendingUp
 } from 'react-icons/fi';
 import './AdminDashboard.css';
 
 export default function AdminDashboard() {
     const { user, isAdmin } = useAuth();
     const [activeTab, setActiveTab] = useState('analytics');
+
+    const { showAlert } = useUIFeedback();
 
     if (!user || !isAdmin) {
         return <Navigate to="/" replace />;
@@ -32,6 +35,12 @@ export default function AdminDashboard() {
                         onClick={() => setActiveTab('analytics')}
                     >
                         <FiPieChart /> Analytics
+                    </button>
+                    <button
+                        className={`admin-nav-item ${activeTab === 'revenue' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('revenue')}
+                    >
+                        <FiTrendingUp /> Revenue Tracker
                     </button>
                     <button
                         className={`admin-nav-item ${activeTab === 'movies' ? 'active' : ''}`}
@@ -57,7 +66,7 @@ export default function AdminDashboard() {
                     >
                         <FiUsers /> User Control
                     </button>
-                    <button className="admin-nav-item" onClick={() => window.alert("Settings opening...")}>
+                    <button className="admin-nav-item" onClick={() => showAlert("Settings opening...", "info")}>
                         <FiSettings /> Settings
                     </button>
                 </nav>
@@ -66,6 +75,7 @@ export default function AdminDashboard() {
             {/* Main Content */}
             <main className="admin-main">
                 {activeTab === 'analytics' && <AnalyticsTab />}
+                {activeTab === 'revenue' && <RevenueTab />}
                 {activeTab === 'movies' && <MoviesTab />}
                 {activeTab === 'theatres' && <TheatresTab />}
                 {activeTab === 'shows' && <ShowsTab />}
@@ -116,8 +126,23 @@ function AnalyticsTab() {
                 </div>
                 <div className="metric-card">
                     <h4>ACTIVE USERS</h4>
-                    <div className="metric-val text-red">{(d.totalUsers || 0).toLocaleString()}</div>
+                    <div className="metric-val text-red">{(d.activeUsers || 0).toLocaleString()}</div>
                     <p className="metric-trend text-red">Live peak traffic</p>
+                </div>
+                <div className="metric-card">
+                    <h4>TOTAL MOVIES</h4>
+                    <div className="metric-val text-red">{(d.totalMovies || 0).toLocaleString()}</div>
+                    <p className="metric-trend text-red">Movies</p>
+                </div>
+                <div className="metric-card">
+                    <h4>TOTAL SHOWS</h4>
+                    <div className="metric-val text-red">{(d.totalShows || 0).toLocaleString()}</div>
+                    <p className="metric-trend text-red">Shows</p>
+                </div>
+                <div className="metric-card">
+                    <h4>TOTAL THEATRES</h4>
+                    <div className="metric-val text-red">{(d.totalTheatres || 0).toLocaleString()}</div>
+                    <p className="metric-trend text-red">Theatres</p>
                 </div>
             </div>
         </div>
@@ -125,21 +150,120 @@ function AnalyticsTab() {
 }
 
 /* ───────────────────────────────────────────────────────────────── 
- * 2. Movies Tab
+ * 2. Revenue Tracker Tab
+ * ───────────────────────────────────────────────────────────────── */
+function RevenueTab() {
+    const [movies, setMovies] = useState([]);
+    const [selectedMovieId, setSelectedMovieId] = useState('');
+    const [stats, setStats] = useState(null);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        api.get('/movies?isAdmin=true').then(r => setMovies(Array.isArray(r.data) ? r.data : []));
+    }, []);
+
+    const fetchStats = (id) => {
+        if (!id) {
+            setStats(null);
+            return;
+        }
+        setLoading(true);
+        api.get(`/admin/movies/${id}/stats`)
+            .then(r => setStats(r.data))
+            .catch(e => console.error(e))
+            .finally(() => setLoading(false));
+    };
+
+    const handleMovieChange = (e) => {
+        const id = e.target.value;
+        setSelectedMovieId(id);
+        fetchStats(id);
+    };
+
+    return (
+        <div className="admin-tab">
+            <header className="admin-tab-header">
+                <div>
+                    <h1 className="admin-title">Revenue Tracker</h1>
+                    <p className="admin-subtitle">Analyze financial performance by movie</p>
+                </div>
+            </header>
+
+            <div className="admin-card" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
+                <div className="admin-form" style={{ maxWidth: '400px' }}>
+                    <div className="form-group">
+                        <label>Select Movie to Analyze</label>
+                        <select value={selectedMovieId} onChange={handleMovieChange}>
+                            <option value="">Choose a movie...</option>
+                            {movies.map(m => <option key={m._id} value={m._id}>{m.title}</option>)}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {loading ? (
+                <div className="spinner" />
+            ) : stats ? (
+                <div className="admin-metrics">
+                    <div className="metric-card">
+                        <h4>CONFIRMED REVENUE</h4>
+                        <div className="metric-val text-cyan">${stats.totalRevenue.toFixed(2)}</div>
+                        <p className="metric-trend text-cyan">Net earnings</p>
+                    </div>
+                    <div className="metric-card">
+                        <h4>CONFIRMED TICKETS</h4>
+                        <div className="metric-val text-teal">{stats.confirmedCount}</div>
+                        <p className="metric-trend text-teal">Sold out potential</p>
+                    </div>
+                    <div className="metric-card">
+                        <h4>CANCELLED TICKETS</h4>
+                        <div className="metric-val text-red">{stats.cancelledCount}</div>
+                        <p className="metric-trend text-red">Released inventory</p>
+                    </div>
+                </div>
+            ) : (
+                <div className="mb-empty" style={{ background: 'var(--color-bg-elevated)', borderRadius: 'var(--radius-lg)' }}>
+                    <div className="mb-empty__icon">📊</div>
+                    <h3 className="mb-empty__title">Select a Movie</h3>
+                    <p className="mb-empty__sub">Choose a movie from the dropdown to view its financial performance and booking data.</p>
+                </div>
+            )}
+        </div>
+    );
+}
+
+/* ───────────────────────────────────────────────────────────────── 
+ * 3. Movies Tab
  * ───────────────────────────────────────────────────────────────── */
 function MoviesTab() {
+    const { showAlert, showConfirm } = useUIFeedback();
     const [movies, setMovies] = useState([]);
     const [editing, setEditing] = useState(null);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
 
-    const fetchMovies = () => api.get('/movies').then(r => setMovies(Array.isArray(r.data) ? r.data : []));
-    useEffect(() => { fetchMovies(); }, []);
+    const fetchMovies = () => api.get(`/admin/movies?page=${page}&limit=10`).then(r => {
+        setMovies(r.data?.items || []);
+        setTotalPages(r.data?.pagination?.pages || 1);
+    });
+    useEffect(() => { fetchMovies(); }, [page]);
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this movie?")) return;
+        const ok = await showConfirm({
+            title: "Delete Movie",
+            message: "Are you sure you want to delete this movie? This action cannot be undone.",
+            confirmText: "Delete",
+            cancelText: "Keep it"
+        });
+        if (!ok) return;
+
         try {
             await api.delete(`/movies/${id}`);
+            showAlert("Movie deleted successfully", "success");
             fetchMovies();
-        } catch (e) { alert("Failed to delete movie."); }
+        } catch (e) {
+            showAlert("Failed to delete movie.", "error");
+        }
     };
 
     return (
@@ -195,11 +319,17 @@ function MoviesTab() {
                     </tbody>
                 </table>
             </div>
+            <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1rem', paddingBottom: '1rem' }}>
+                <button className="btn-ghost btn-sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</button>
+                <span style={{ alignSelf: 'center', color: 'var(--text-muted)' }}>Page {page} of {totalPages}</span>
+                <button className="btn-ghost btn-sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</button>
+            </div>
         </div>
     );
 }
 
 function MovieForm({ movie, onClose, onSuccess }) {
+    const { showAlert } = useUIFeedback();
     const isEdit = !!movie._id;
     const [form, setForm] = useState({
         title: movie.title || '',
@@ -221,8 +351,13 @@ function MovieForm({ movie, onClose, onSuccess }) {
         try {
             if (isEdit) await api.put(`/movies/${movie._id}`, form);
             else await api.post('/movies', form);
+            showAlert(`Movie ${isEdit ? 'updated' : 'added'} successfully`, "success");
             onSuccess();
-        } catch (e) { alert("Failed to save movie."); console.error(e); }
+        } catch (e) {
+            const msg = e.response?.data?.message || "Failed to save movie.";
+            showAlert(msg, "error");
+            console.error(e);
+        }
     };
 
     return (
@@ -309,6 +444,7 @@ function MovieForm({ movie, onClose, onSuccess }) {
  * 3. Theatres Tab
  * ───────────────────────────────────────────────────────────────── */
 function TheatresTab() {
+    const { showAlert, showConfirm } = useUIFeedback();
     const [theatres, setTheatres] = useState([]);
     const [editing, setEditing] = useState(null);
 
@@ -316,9 +452,20 @@ function TheatresTab() {
     useEffect(() => { fetchTheatres(); }, []);
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Delete this theatre?")) return;
-        try { await api.delete(`/theatres/${id}`); fetchTheatres(); }
-        catch (e) { alert("Failed to delete."); }
+        const ok = await showConfirm({
+            title: "Delete Theatre",
+            message: "Are you sure you want to delete this theatre? All associated data will be lost.",
+            confirmText: "Delete",
+            cancelText: "Keep it"
+        });
+        if (!ok) return;
+
+        try {
+            await api.delete(`/theatres/${id}`);
+            showAlert("Theatre deleted successfully", "success");
+            fetchTheatres();
+        }
+        catch (e) { showAlert("Failed to delete.", "error"); }
     };
 
     return (
@@ -401,6 +548,7 @@ function PremiumRowInput({ rows, onChange }) {
 }
 
 function TheatreForm({ theatre, onClose, onSuccess }) {
+    const { showAlert } = useUIFeedback();
     const isEdit = !!theatre._id;
     const [form, setForm] = useState({
         name: theatre.name || '',
@@ -411,12 +559,16 @@ function TheatreForm({ theatre, onClose, onSuccess }) {
 
     const onSubmit = async (e) => {
         e.preventDefault();
-        if (form.screens.length === 0) return alert("Must have at least one screen.");
+        if (form.screens.length === 0) {
+            showAlert("Must have at least one screen.", "warning");
+            return;
+        }
         try {
             if (isEdit) await api.put(`/theatres/${theatre._id}`, form);
             else await api.post('/theatres', form);
+            showAlert(`Theatre ${isEdit ? 'updated' : 'added'} successfully`, "success");
             onSuccess();
-        } catch (e) { alert("Failed to save."); }
+        } catch (e) { showAlert("Failed to save.", "error"); }
     };
 
     return (
@@ -499,26 +651,72 @@ function TheatreForm({ theatre, onClose, onSuccess }) {
  * 4. Shows Tab
  * ───────────────────────────────────────────────────────────────── */
 function ShowsTab() {
+    const { showAlert, showConfirm } = useUIFeedback();
     const [shows, setShows] = useState([]);
     const [editing, setEditing] = useState(null);
+    const [filterStatus, setFilterStatus] = useState('upcoming'); // 'all', 'upcoming', 'past'
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
 
-    const fetchShows = () => api.get('/admin/shows').then(r => setShows(Array.isArray(r.data) ? r.data : []));
-    useEffect(() => { fetchShows(); }, []);
+    const fetchShows = () => {
+        const query = filterStatus === 'all' ? `?page=${page}&limit=10` : `?status=${filterStatus}&page=${page}&limit=10`;
+        api.get(`/admin/shows${query}`).then(r => {
+            setShows(r.data?.items || []);
+            setTotalPages(r.data?.pagination?.pages || 1);
+        });
+    };
+
+    useEffect(() => { setPage(1); }, [filterStatus]);
+    useEffect(() => { fetchShows(); }, [filterStatus, page]);
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Delete show?")) return;
-        try { await api.delete(`/admin/shows/${id}`); fetchShows(); }
-        catch (e) { alert("Failed to delete."); }
+        const ok = await showConfirm({
+            title: "Delete Show",
+            message: "Are you sure you want to delete this show? This will affect any existing bookings.",
+            confirmText: "Delete",
+            cancelText: "Keep it"
+        });
+        if (!ok) return;
+
+        try {
+            await api.delete(`/admin/shows/${id}`);
+            showAlert("Show deleted successfully", "success");
+            fetchShows();
+        }
+        catch (e) { showAlert("Failed to delete.", "error"); }
     };
 
     return (
         <div className="admin-tab">
             <header className="admin-tab-header">
-                <h1 className="admin-title">Live Shows</h1>
+                <div>
+                    <h1 className="admin-title">Live Shows</h1>
+                    <div className="admin-filter-tabs">
+                        <button
+                            className={`filter-btn ${filterStatus === 'upcoming' ? 'active' : ''}`}
+                            onClick={() => setFilterStatus('upcoming')}
+                        >
+                            Upcoming
+                        </button>
+                        <button
+                            className={`filter-btn ${filterStatus === 'past' ? 'active' : ''}`}
+                            onClick={() => setFilterStatus('past')}
+                        >
+                            Past History
+                        </button>
+                        <button
+                            className={`filter-btn ${filterStatus === 'all' ? 'active' : ''}`}
+                            onClick={() => setFilterStatus('all')}
+                        >
+                            All
+                        </button>
+                    </div>
+                </div>
                 <button className="btn-primary" onClick={() => setEditing({})}>
                     <FiPlus /> Schedule Show
                 </button>
             </header>
+
 
             {editing && <ShowForm show={editing} onClose={() => setEditing(null)} onSuccess={() => { setEditing(null); fetchShows(); }} />}
 
@@ -545,11 +743,17 @@ function ShowsTab() {
                     </tbody>
                 </table>
             </div>
+            <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1rem', paddingBottom: '1rem' }}>
+                <button className="btn-ghost btn-sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</button>
+                <span style={{ alignSelf: 'center', color: 'var(--text-muted)' }}>Page {page} of {totalPages}</span>
+                <button className="btn-ghost btn-sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</button>
+            </div>
         </div>
     );
 }
 
 function ShowForm({ show, onClose, onSuccess }) {
+    const { showAlert } = useUIFeedback();
     const isEdit = !!show._id;
     const [movies, setMovies] = useState([]);
     const [theatres, setTheatres] = useState([]);
@@ -579,7 +783,8 @@ function ShowForm({ show, onClose, onSuccess }) {
 
         // 1. Check if show is in the past
         if (selectedTime < now) {
-            return alert("Error: Cannot schedule a show in the past.");
+            showAlert("Error: Cannot schedule a show in the past.", "error");
+            return;
         }
 
         // 2. Check if show is before movie release
@@ -587,15 +792,17 @@ function ShowForm({ show, onClose, onSuccess }) {
         if (selectedMovie) {
             const releaseDate = new Date(selectedMovie.releaseDate);
             if (selectedTime < releaseDate) {
-                return alert(`Error: Show date is before movie release date (${releaseDate.toLocaleDateString()}).`);
+                showAlert(`Error: Show date is before movie release date (${releaseDate.toLocaleDateString()}).`, "error");
+                return;
             }
         }
 
         try {
             if (isEdit) await api.put(`/admin/shows/${show._id}`, form);
             else await api.post('/admin/shows', form);
+            showAlert(`Show ${isEdit ? 'updated' : 'scheduled'} successfully`, "success");
             onSuccess();
-        } catch (e) { alert("Failed to save show."); }
+        } catch (e) { showAlert("Failed to save show.", "error"); }
     };
 
     if (loadingConfig) return <div className="spinner context-spinner" />;
@@ -659,16 +866,25 @@ function ShowForm({ show, onClose, onSuccess }) {
  * 5. Users Tab
  * ───────────────────────────────────────────────────────────────── */
 function UsersTab() {
+    const { showAlert } = useUIFeedback();
     const [users, setUsers] = useState([]);
+    const [viewHistoryToken, setViewHistoryToken] = useState(null);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
 
-    const fetchUsers = () => api.get('/admin/users').then(r => setUsers(r.data));
-    useEffect(() => { fetchUsers(); }, []);
+    const fetchUsers = () => api.get(`/admin/users?page=${page}&limit=10`).then(r => {
+        setUsers(r.data?.items || []);
+        setTotalPages(r.data?.pagination?.pages || 1);
+    });
+    useEffect(() => { fetchUsers(); }, [page]);
 
     const handleRoleToggle = async (id, currentRole) => {
         try {
-            await api.put(`/admin/users/${id}/role`, { role: currentRole === 'admin' ? 'user' : 'admin' });
+            const newRole = currentRole === 'admin' ? 'user' : 'admin';
+            await api.put(`/admin/users/${id}/role`, { role: newRole });
+            showAlert(`User successfully ${newRole === 'admin' ? 'promoted' : 'demoted'}`, "success");
             fetchUsers();
-        } catch (e) { alert("Failed to update role. You cannot demote yourself."); }
+        } catch (e) { showAlert("Failed to update role. You cannot demote yourself.", "error"); }
     };
 
     return (
@@ -676,6 +892,14 @@ function UsersTab() {
             <header className="admin-tab-header">
                 <h1 className="admin-title">User Control</h1>
             </header>
+
+            {viewHistoryToken && (
+                <UserHistoryModal
+                    user={viewHistoryToken}
+                    onClose={() => setViewHistoryToken(null)}
+                />
+            )}
+
             <div className="admin-table-wrap">
                 <table className="admin-table">
                     <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead>
@@ -686,14 +910,126 @@ function UsersTab() {
                                 <td>{u.email}</td>
                                 <td><span className={`badge ${u.role === 'admin' ? 'badge--outline text-cyan' : ''}`}>{u.role}</span></td>
                                 <td>
-                                    <button className="btn-ghost btn-sm" onClick={() => handleRoleToggle(u._id, u.role)}>
-                                        Make {u.role === 'admin' ? 'User' : 'Admin'}
-                                    </button>
+                                    <div className="action-btns">
+                                        <button className="btn-ghost btn-sm" onClick={() => setViewHistoryToken(u)}>
+                                            View History
+                                        </button>
+                                        <button className="btn-ghost btn-sm" onClick={() => handleRoleToggle(u._id, u.role)}>
+                                            Make {u.role === 'admin' ? 'User' : 'Admin'}
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
+            </div>
+            <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1rem', paddingBottom: '1rem' }}>
+                <button className="btn-ghost btn-sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</button>
+                <span style={{ alignSelf: 'center', color: 'var(--text-muted)' }}>Page {page} of {totalPages}</span>
+                <button className="btn-ghost btn-sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</button>
+            </div>
+        </div>
+    );
+}
+
+function UserHistoryModal({ user, onClose }) {
+    const [bookings, setBookings] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        api.get(`/admin/user-history/${user._id}`)
+            .then(r => setBookings(r.data))
+            .catch(e => console.error(e))
+            .finally(() => setLoading(false));
+    }, [user._id]);
+
+    return (
+        <div className="admin-modal-overlay">
+            <div className="admin-modal" style={{ maxWidth: '1100px', width: '95%' }}>
+                <header className="admin-modal-header" style={{ marginBottom: '1.5rem' }}>
+                    <div>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#fff' }}>Booking History</h2>
+                        <p style={{ color: 'var(--text-teal)', fontSize: '0.9rem', marginTop: '0.2rem' }}>Customer: {user.name}</p>
+                    </div>
+                </header>
+
+                <div className="admin-modal-body" style={{ maxHeight: '75vh', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                    {loading ? (
+                        <div className="spinner" />
+                    ) : bookings.length === 0 ? (
+                        <div className="mb-empty" style={{ padding: '4rem 0' }}>
+                            <div className="mb-empty__icon">🎟️</div>
+                            <h3 className="mb-empty__title">No Bookings Found</h3>
+                            <p className="mb-empty__sub">This user hasn't made any reservations yet.</p>
+                        </div>
+                    ) : (
+                        <div className="admin-table-wrap" style={{ border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)' }}>
+                            <table className="admin-table">
+                                <thead style={{ background: 'rgba(255,255,255,0.02)' }}>
+                                    <tr>
+                                        <th style={{ padding: '1.25rem' }}>Movie & ID</th>
+                                        <th>Showtime</th>
+                                        <th>Seats</th>
+                                        <th>Status</th>
+                                        <th style={{ textAlign: 'right' }}>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {bookings.map(b => {
+                                        const showDate = b.showId ? new Date(b.showId.showTime) : null;
+                                        return (
+                                            <tr key={b._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                                <td style={{ padding: '1.25rem' }}>
+                                                    <div style={{ fontWeight: '600', color: '#fff', marginBottom: '0.25rem' }}>
+                                                        {b.showId?.movieId?.title || 'Deleted Movie'}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace', letterSpacing: '0.05em' }}>
+                                                        ID: #{b._id.toUpperCase()}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {showDate ? (
+                                                        <div style={{ fontSize: '0.9rem' }}>
+                                                            <div style={{ color: '#ebf1f5' }}>{showDate.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                                                            <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{showDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                                        </div>
+                                                    ) : 'N/A'}
+                                                </td>
+                                                <td>
+                                                    <div className="mb-card__seats" style={{ gap: '0.25rem' }}>
+                                                        {b.seats.map(s => (
+                                                            <span key={s} style={{
+                                                                background: 'rgba(255,255,255,0.05)',
+                                                                padding: '0.1rem 0.4rem',
+                                                                borderRadius: '4px',
+                                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                                fontSize: '0.75rem',
+                                                                color: 'var(--teal-400)'
+                                                            }}>{s}</span>
+                                                        ))}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span className={`mb-status-badge ${b.bookingStatus === 'Confirmed' ? 'mb-status-badge--confirmed' : 'mb-status-badge--cancelled'}`} style={{ fontSize: '0.65rem' }}>
+                                                        {b.bookingStatus}
+                                                    </span>
+                                                </td>
+                                                <td style={{ textAlign: 'right', fontWeight: '700', color: 'var(--teal-400)', fontSize: '1.1rem' }}>
+                                                    ${b.totalAmount.toFixed(2)}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+
+                <footer style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem' }}>
+                    <button className="btn-primary" onClick={onClose} style={{ minWidth: '120px' }}>Close History</button>
+                </footer>
             </div>
         </div>
     );

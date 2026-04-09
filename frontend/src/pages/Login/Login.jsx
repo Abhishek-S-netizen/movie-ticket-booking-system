@@ -1,6 +1,5 @@
-// Placeholder for Login Page
 import React, { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import { FiMail, FiLock, FiUser, FiPhone, FiEye, FiEyeOff, FiFilm } from 'react-icons/fi';
@@ -71,7 +70,7 @@ export default function Login() {
             const token = data.token;
             const userData = data.user;
             login(token, userData);
-            navigate(userData.role === 'admin' ? '/admin' : '/');
+            navigate(userData.role === 'admin' ? '/admin' : '/user-dashboard');
         } catch (err) {
             setServerError(err.response?.data?.message || 'Something went wrong. Please try again.');
         } finally {
@@ -152,7 +151,14 @@ export default function Login() {
 
                     {/* Password */}
                     <div className="login-field">
-                        <label htmlFor="login-password" className="login-label">Password</label>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <label htmlFor="login-password" className="login-label" style={{ marginBottom: 0 }}>Password</label>
+                            {tab === 'login' && (
+                                <Link to="/forgot-password" style={{ fontSize: '0.85rem', color: 'var(--c-brand)', textDecoration: 'none' }}>
+                                    Forgot Password?
+                                </Link>
+                            )}
+                        </div>
                         <div className="login-input-wrap">
                             <FiLock className="login-input-icon" />
                             <input

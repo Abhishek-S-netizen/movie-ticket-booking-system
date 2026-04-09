@@ -3,6 +3,7 @@ const Movie = require('../models/Movie');
 const Theatre = require('../models/Theatre');
 const Show = require('../models/Show');
 const Booking = require('../models/Booking');
+const mongoose = require('mongoose');
 
 // ─────────────────────────────────────────────
 // SHOW MANAGEMENT
@@ -13,12 +14,36 @@ const Booking = require('../models/Booking');
 // @access  Private/Admin
 const getAllShows = async (req, res) => {
   try {
-    const shows = await Show.find({})
+    const { status, page = 1, limit = 10 } = req.query;
+    let query = {};
+
+    if (status === 'upcoming') {
+      query.showTime = { $gte: new Date() };
+    } else if (status === 'past') {
+      query.showTime = { $lt: new Date() };
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const total = await Show.countDocuments(query);
+
+    const shows = await Show.find(query)
       .populate('movieId', 'title posterUrl duration')
       .populate('theatreId', 'name location city')
-      .sort('showTime');
+      .sort('showTime')
+      .skip(skip)
+      .limit(parseInt(limit));
 
-    res.status(200).json({ success: true, data: shows });
+    res.status(200).json({
+      success: true,
+      data: {
+        items: shows,
+        pagination: {
+          total,
+          page: parseInt(page),
+          pages: Math.ceil(total / parseInt(limit))
+        }
+      }
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error fetching shows', error: error.message });
   }
@@ -63,6 +88,21 @@ const createShow = async (req, res) => {
       return res.status(400).json({ success: false, message: `Screen ${screenNumber} does not exist in this theatre` });
     }
 
+    // ── NEW DATE VALIDATION ──
+    const selectedTime = new Date(showTime);
+    const now = new Date();
+
+    // 1. Past check
+    if (selectedTime < now) {
+      return res.status(400).json({ success: false, message: 'Cannot schedule a show in the past' });
+    }
+
+    // 2. Release check
+    const releaseDate = new Date(movie.releaseDate);
+    if (selectedTime < releaseDate) {
+      return res.status(400).json({ success: false, message: `Show date must be after movie release date (${releaseDate.toLocaleDateString()})` });
+    }
+
     const show = await Show.create({ movieId, theatreId, screenNumber, showTime, pricing });
 
     res.status(201).json({ success: true, data: show });
@@ -79,6 +119,24 @@ const updateShow = async (req, res) => {
     const show = await Show.findById(req.params.id);
 
     if (!show) return res.status(404).json({ success: false, message: 'Show not found' });
+
+    // ── NEW DATE VALIDATION ──
+    if (req.body.showTime || req.body.movieId) {
+      const selectedTime = new Date(req.body.showTime || show.showTime);
+      const now = new Date();
+
+      if (selectedTime < now) {
+        return res.status(400).json({ success: false, message: 'Cannot schedule a show in the past' });
+      }
+
+      const movie = await Movie.findById(req.body.movieId || show.movieId);
+      if (movie) {
+        const releaseDate = new Date(movie.releaseDate);
+        if (selectedTime < releaseDate) {
+          return res.status(400).json({ success: false, message: `Show date must be after movie release date (${releaseDate.toLocaleDateString()})` });
+        }
+      }
+    }
 
     Object.assign(show, req.body);
     const updatedShow = await show.save();
@@ -107,6 +165,40 @@ const deleteShow = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────
+// MOVIE MANAGEMENT (ADMIN)
+// ─────────────────────────────────────────────
+
+// @desc    Get all movies (including archived) for Admin Dashboard
+// @route   GET /api/admin/movies
+// @access  Private/Admin
+const getAllMovies = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const total = await Movie.countDocuments({});
+
+    const movies = await Movie.find({})
+      .sort('-createdAt')
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    res.status(200).json({
+      success: true,
+      data: {
+        items: movies,
+        pagination: {
+          total,
+          page: parseInt(page),
+          pages: Math.ceil(total / parseInt(limit))
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error fetching movie catalog', error: error.message });
+  }
+};
+
+// ─────────────────────────────────────────────
 // USER MANAGEMENT
 // ─────────────────────────────────────────────
 
@@ -115,8 +207,27 @@ const deleteShow = async (req, res) => {
 // @access  Private/Admin
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({}).select('-password').sort('-createdAt');
-    res.status(200).json({ success: true, data: users });
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const total = await User.countDocuments({});
+
+    const users = await User.find({})
+      .select('-password')
+      .sort('-createdAt')
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    res.status(200).json({
+      success: true,
+      data: {
+        items: users,
+        pagination: {
+          total,
+          page: parseInt(page),
+          pages: Math.ceil(total / parseInt(limit))
+        }
+      }
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error fetching users', error: error.message });
   }
@@ -169,7 +280,7 @@ const getAnalytics = async (req, res) => {
       cancelledBookings,
       revenueData
     ] = await Promise.all([
-      User.countDocuments(),
+      User.countDocuments({ role: 'user' }),
       Movie.countDocuments(),
       Theatre.countDocuments(),
       Show.countDocuments(),
@@ -200,7 +311,7 @@ const getAnalytics = async (req, res) => {
     res.status(200).json({
       success: true,
       data: {
-        totalUsers,
+        activeUsers: totalUsers,
         totalMovies,
         totalTheatres,
         totalShows,
@@ -212,7 +323,76 @@ const getAnalytics = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error fetching analytics', error: error.message });
+    res.status(200).json({ success: false, message: 'Server error fetching analytics', error: error.message });
+  }
+};
+
+// @desc    Get all bookings for a specific user
+// @route   GET /api/admin/users/:id/bookings
+// @access  Private/Admin
+const getUserBookings = async (req, res) => {
+  try {
+    const bookings = await Booking.find({ userId: req.params.id })
+      .populate({
+        path: 'showId',
+        populate: [
+          { path: 'movieId', select: 'title posterUrl' },
+          { path: 'theatreId', select: 'name city' }
+        ]
+      })
+      .sort('-createdAt');
+
+    res.status(200).json({
+      success: true,
+      data: bookings
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error fetching user bookings', error: error.message });
+  }
+};
+
+// @desc    Get stats for a specific movie
+// @route   GET /api/admin/movies/:id/stats
+// @access  Private/Admin
+const getMovieStats = async (req, res) => {
+  try {
+    const movieId = req.params.id;
+
+    const stats = await Booking.aggregate([
+      {
+        $lookup: {
+          from: 'shows',
+          localField: 'showId',
+          foreignField: '_id',
+          as: 'show'
+        }
+      },
+      { $unwind: '$show' },
+      { $match: { 'show.movieId': new mongoose.Types.ObjectId(movieId) } },
+      {
+        $group: {
+          _id: '$show.movieId',
+          totalRevenue: {
+            $sum: { $cond: [{ $eq: ['$bookingStatus', 'Confirmed'] }, '$totalAmount', 0] }
+          },
+          confirmedCount: {
+            $sum: { $cond: [{ $eq: ['$bookingStatus', 'Confirmed'] }, 1, 0] }
+          },
+          cancelledCount: {
+            $sum: { $cond: [{ $eq: ['$bookingStatus', 'Cancelled'] }, 1, 0] }
+          }
+        }
+      }
+    ]);
+
+    const result = stats.length > 0 ? stats[0] : { totalRevenue: 0, confirmedCount: 0, cancelledCount: 0 };
+
+    res.status(200).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error fetching movie stats', error: error.message });
   }
 };
 
@@ -224,5 +404,8 @@ module.exports = {
   deleteShow,
   getAllUsers,
   updateUserRole,
-  getAnalytics
+  getAnalytics,
+  getAllMovies,
+  getUserBookings,
+  getMovieStats
 };
