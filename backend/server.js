@@ -18,7 +18,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: "https://cinemax-xi.vercel.app/",
+  origin: "https://cinemax-xi.vercel.app",
   credentials: true
 }));
 
